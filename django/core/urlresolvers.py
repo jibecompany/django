@@ -19,6 +19,9 @@ from django.utils.functional import memoize
 from django.utils.importlib import import_module
 from django.utils.regex_helper import normalize
 
+import logging
+log = logging.getLogger(__name__)
+
 _resolver_cache = {} # Maps URLconf modules to RegexURLResolver instances.
 _callable_cache = {} # Maps view and url pattern names to their view functions.
 
@@ -271,7 +274,12 @@ class RegexURLResolver(object):
         try:
             return self._urlconf_module
         except AttributeError:
-            self._urlconf_module = import_module(self.urlconf_name)
+            try:
+                self._urlconf_module = import_module(self.urlconf_name)
+            except Exception:
+                log.error("RegexURLResolver._get_urlconf_module: exception while loading %s",
+                    self.urlconf_name, exc_info=True)
+                raise
             return self._urlconf_module
     urlconf_module = property(_get_urlconf_module)
 
